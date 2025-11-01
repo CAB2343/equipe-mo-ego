@@ -9,7 +9,6 @@ public class PlayerController1 : MonoBehaviour
     [Header("Camera Settings")]
     public bool _FPSCamera = true;
     [NonSerialized] public Transform _MyCamera;
-    public GameObject mainMenu;
 
     [Header("Gravity Settings")]
     public bool _EnableGravity = true;
@@ -69,16 +68,7 @@ public class PlayerController1 : MonoBehaviour
 
     void Update()
     {
-        if (mainMenu.activeSelf)
-        {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-        }
-        else
-        {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-        }
+
 
         if (_EnableMovement) Movement();        
         if (_EnableGravity) NormalGravity();
