@@ -20,26 +20,26 @@ MonoBehaviour:
       blue: 0
       greyScale: 0
     dithering4: 0
-    dithering8: 0
-    vignette: 0.292
-    innerCurve: 20
-    monitorCurve: 0.038
+    dithering8: 0.04
+    vignette: 0.248
+    innerCurve: 5.28
+    monitorCurve: 0.028
     monitorInnerSize:
       width: 0
       height: 0
     monitorOutterSize:
       width: 0.1
       height: 0.1
-    zoom: 1.19
+    zoom: 1.04
     monitorRoundness: 0.2
     monitorTexture: {fileID: 0}
     monitorColor: {r: 0.121796034, g: 0.12775578, b: 0.16037738, a: 1}
-    innerMonitorDarkness: 0.215
+    innerMonitorDarkness: 0.252
     innerMonitorShine: 0.01
     colorScans:
-      greenChannelMultiplier: -0.355
-      redBlueChannelMultiplier: -0.334
-      sizeMultiplier: 3.06
+      greenChannelMultiplier: -0.388
+      redBlueChannelMultiplier: -0.316
+      sizeMultiplier: 3.12
     innerMonitorShineRadius: -0.087
     innerMonitorShineCurve: 10
-  validationId: 5ebd2245-8259-4fa8-8937-dddc3392b4b8
+  validationId: 11581a26-2ff6-4423-b82c-04d28e2b25b5
