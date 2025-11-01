@@ -10,7 +10,6 @@ public class MenuManager : MonoBehaviour
     [SerializeField] private GameObject mainMenu;
     [SerializeField] private GameObject mainMenuButtons;
     [SerializeField] private GameObject options;
-    [SerializeField] private string game;
 
     void Start()
     {
@@ -18,7 +17,7 @@ public class MenuManager : MonoBehaviour
 
     public void Jogar()
     {
-        mainMenu.SetActive(false);
+        SceneManager.LoadScene("GAMEUOU");
     }
 
     public void OpenOptions()
