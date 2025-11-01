@@ -9,6 +9,7 @@ public class Coletaveis : MonoBehaviour
         if(other.CompareTag("Player"))
         {
             Destroy(gameObject);
+            Debug.Log("UUUU LEGAL VOCÊ PEGOU A PORRINHA");
         }
     }
 
