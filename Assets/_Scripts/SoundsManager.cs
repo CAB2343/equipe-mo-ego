@@ -27,7 +27,8 @@ public class SoundsManager : MonoBehaviour
     public void SoundPlay(int index)
     {
         sound = listSoundEffects[index];
-        audioMixer.GetFloat("Volume", out float effectsVolume);
+        audioMixer.GetFloat("Volume", out float effectsVolumeDB);
+        float effectsVolume = Mathf.Pow(10f, effectsVolumeDB / 20f);
         audioSource.PlayOneShot(sound, effectsVolume); 
     }
 }
