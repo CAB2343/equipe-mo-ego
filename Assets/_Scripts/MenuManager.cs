@@ -14,12 +14,12 @@ public class MenuManager : MonoBehaviour
 
     void Start()
     {
-        Time.timeScale = 0f;
+        //Time.timeScale = 0f;
     }
 
     public void Jogar()
     {
-        Time.timeScale = 1f;
+        //Time.timeScale = 1f;
         mainMenu.SetActive(false);
     }
 
