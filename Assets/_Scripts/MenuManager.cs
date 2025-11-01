@@ -7,25 +7,31 @@ using UnityEngine.SceneManagement;
 
 public class MenuManager : MonoBehaviour
 {
-
     [SerializeField] private GameObject mainMenu;
+    [SerializeField] private GameObject mainMenuButtons;
     [SerializeField] private GameObject options;
     [SerializeField] private string game;
 
+    void Start()
+    {
+        Time.timeScale = 0f;
+    }
+
     public void Jogar()
     {
-        SceneManager.LoadScene(game);
+        Time.timeScale = 1f;
+        mainMenu.SetActive(false);
     }
 
     public void OpenOptions()
     {
-        mainMenu.SetActive(false);
+        mainMenuButtons.SetActive(false);
         options.SetActive(true);
     }
 
     public void CloseOptions()
     {
-        mainMenu.SetActive(true);
+        mainMenuButtons.SetActive(true);
         options.SetActive(false);
     }
 
