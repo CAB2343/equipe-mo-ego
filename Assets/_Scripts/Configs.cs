@@ -33,12 +33,11 @@ public class Configs : MonoBehaviour
     {
         if (fullScreen.isOn)
         {
-            Screen.fullScreen = true;
+            Screen.SetResolution(320, 240, FullScreenWindow);
         }
         else
         {
-            Screen.fullScreen = false;
-            Screen.SetResolution(1920, 1080, false);
+            Screen.SetResolution(320, 240, false);
         }
     }
 }

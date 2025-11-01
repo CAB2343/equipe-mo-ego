@@ -11,16 +11,17 @@ public class MenuManager : MonoBehaviour
     [SerializeField] private GameObject mainMenuButtons;
     [SerializeField] private GameObject options;
     [SerializeField] private string game;
+    public GameObject MaoPersonagem;
 
     void Start()
     {
-        //Time.timeScale = 0f;
+        MaoPersonagem.SetActive(false);
     }
 
     public void Jogar()
     {
-        //Time.timeScale = 1f;
         mainMenu.SetActive(false);
+        MaoPersonagem.SetActive(true);
     }
 
     public void OpenOptions()
