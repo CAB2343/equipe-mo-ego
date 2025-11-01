@@ -44,6 +44,9 @@ namespace BrewedInk.CRT
 		private static readonly int PropBrewedInkBayer4 = Shader.PropertyToID("_BrewedInk_Bayer4");
 		private static readonly int PropBrewedInkBayer8 = Shader.PropertyToID("_BrewedInk_Bayer8");
 
+		private float monitorCurve = PropMonitorCurve;
+		private float dithering = PropDitheringAmount8;
+
 		private static readonly float[] bayer4 = new float[]{
 			0,8,2,10,
 			12,4,14,6,
@@ -161,6 +164,7 @@ namespace BrewedInk.CRT
 			
 			Graphics.Blit(src, dest);
 		}
+
 	}
 	
 	[Serializable]
@@ -191,4 +195,6 @@ namespace BrewedInk.CRT
 		[Range(0,10)]
 		public float sizeMultiplier;
 	}
+
+	
 }

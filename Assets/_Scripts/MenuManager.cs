@@ -10,11 +10,11 @@ public class MenuManager : MonoBehaviour
     [SerializeField] private GameObject mainMenu;
     [SerializeField] private GameObject mainMenuButtons;
     [SerializeField] private GameObject options;
-    [SerializeField] private CRTCameraBehaviour camScript;
+    [SerializeField] private CRTCurveTransition camTransition;
+    [SerializeField] private AudioSource sound;
 
     void Start()
     {
-                                                                                    
     }
 
     void update()
@@ -24,7 +24,9 @@ public class MenuManager : MonoBehaviour
 
     public void Jogar()
     {
-        SceneManager.LoadScene("GAMEUOU");
+        sound.Stop();
+        camTransition.StartCurveTransition(0f, 3f);
+        StartCoroutine(CurveTransitionRoutine(3f));
     }
 
     public void OpenOptions()
@@ -42,5 +44,17 @@ public class MenuManager : MonoBehaviour
     public void SairJogo()
     {
         Application.Quit();
+    }
+
+    private IEnumerator CurveTransitionRoutine(float duracao)
+    {
+        float tempo = 0f;
+
+        while (tempo < duracao)
+        {
+            tempo += Time.deltaTime;
+            yield return null;
+        }
+        SceneManager.LoadScene("GAMEUOU");
     }
 }
