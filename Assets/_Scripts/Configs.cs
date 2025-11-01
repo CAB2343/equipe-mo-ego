@@ -14,6 +14,8 @@ public class Configs : MonoBehaviour
         volume = 1f;
         volumeSlider.value = volume;
         SetVolume();
+
+        Screen.SetResolution(320, 240, true);
     }
 
     public void SetVolume()
@@ -33,7 +35,7 @@ public class Configs : MonoBehaviour
     {
         if (fullScreen.isOn)
         {
-            Screen.SetResolution(320, 240, FullScreenWindow);
+            Screen.SetResolution(320, 240, true);
         }
         else
         {
