@@ -10,9 +10,16 @@ public class MenuManager : MonoBehaviour
     [SerializeField] private GameObject mainMenu;
     [SerializeField] private GameObject mainMenuButtons;
     [SerializeField] private GameObject options;
+    [SerializeField] private CRTCameraBehaviour camScript;
 
     void Start()
     {
+                                                                                    
+    }
+
+    void update()
+    {
+
     }
 
     public void Jogar()
