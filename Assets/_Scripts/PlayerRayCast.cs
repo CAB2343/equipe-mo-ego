@@ -32,6 +32,19 @@ public class PlayerRayCast : MonoBehaviour
                 }
 
             }
+
+
         }
+        else
+        {
+            StartCoroutine(Saiu());
+        }
+
+    }
+
+    IEnumerator Saiu(){
+        yield return new WaitForSeconds(1f);
+        DialogueText.SetActive(false);
+
     }
 }
