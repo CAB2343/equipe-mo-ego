@@ -52,7 +52,21 @@ public class MenuManager : MonoBehaviour
         canvas.SetActive(true);
         perdeu.SetActive(true);
         canvasGame.SetActive(false);
-        camTransition.StartMonitorCurveTransition(0f, 3f);
+        camTransition.StartMonitorCurveTransition(0.289f, 2f);
+        camTransition.StartDitheringTransition(0.07f, 2f);
+        sound.Stop();
+        soundsManager.SoundPlay(3);
+    }
+    
+    public void Venceu()
+    {
+        canvas.SetActive(true);
+        ganhou.SetActive(true);
+        canvasGame.SetActive(false);
+        camTransition.StartMonitorCurveTransition(0.289f, 2f);
+        camTransition.StartDitheringTransition(0.07f, 2f);
+        sound.Stop();
+        soundsManager.SoundPlay(4);
     }
 
     public void SairJogo()

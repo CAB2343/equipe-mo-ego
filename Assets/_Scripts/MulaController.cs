@@ -196,6 +196,7 @@ public class MulaController : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             state = State.Patrol;
+            playerDead = true;
             menuManager.Perdeu();
         }
     }
