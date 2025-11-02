@@ -86,6 +86,7 @@ public class MulaController : MonoBehaviour
             if (state == State.Chase)
             {
                 sounds.ChangeTheme(2);
+                sounds.SoundPlay(5);
             }
             else if (state == State.Patrol)
             {
