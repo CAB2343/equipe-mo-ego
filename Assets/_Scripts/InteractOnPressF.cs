@@ -7,21 +7,21 @@ public class InteractHideEnterExit : MonoBehaviour
 {
     [Header("Player detection")]
     public string playerTag = "Player";
-    public Transform playerTransform; // referência opcional
-    public bool returnOnExit = true;  // retorna se sair do trigger
+    public Transform playerTransform;
+    public bool returnOnExit = true;
 
     [Header("Cinemachine (VCams)")]
     public CinemachineVirtualCamera vcamMain;
     public CinemachineVirtualCamera vcamInteract;
 
     [Header("Priority behavior")]
-    public int interactPriorityOverride = -1; // se >0 usa esse valor
-    public int priorityBoost = 10;            // se override == -1 usa main + boost
+    public int interactPriorityOverride = -1;
+    public int priorityBoost = 10;
 
     [Header("Behavior")]
-    public MonoBehaviour playerControllerToDisable; // script de movimento
-    public GameObject promptUI;                    // "Press F"
-    public float interactDuration = 0f;            // 0 = manual
+    public MonoBehaviour playerControllerToDisable; 
+    public GameObject promptUI;                    
+    public float interactDuration = 0f;            
 
     [Header("Animator / States")]
     public Animator doorAnimator;              
@@ -31,20 +31,20 @@ public class InteractHideEnterExit : MonoBehaviour
     public string exitStateName = "saindo";
 
     [Header("Esconderijo Transform")]
-    public Transform esconderijoCamera; // transform da câmera do esconderijo
+    public Transform esconderijoCamera; // referência do ponto do esconderijo
 
-    // internal state
     private bool playerNearby = false;
     private bool inInteractMode = false;
-    private bool isHidden = false; 
+    private bool isHidden = false;
     private Coroutine autoReturnCoroutine = null;
 
     private int initialMainPriority = 0;
     private int initialInteractPriority = 0;
     private bool prioritiesStored = false;
 
-    private Vector3 playerPosOriginal;
-    private Quaternion playerRotOriginal;
+    // posição original do player
+    private Vector3 originalPosition;
+    private Quaternion originalRotation;
 
     void Reset()
     {
@@ -74,12 +74,9 @@ public class InteractHideEnterExit : MonoBehaviour
             {
                 EnterInteractMode();
             }
-            else
+            else if (isHidden)
             {
-                if (isHidden)
-                {
-                    StartCoroutine(PlayExitAndRestore());
-                }
+                StartCoroutine(PlayExitAndRestore());
             }
         }
     }
@@ -118,63 +115,40 @@ public class InteractHideEnterExit : MonoBehaviour
     // ---------- Core flow ----------
     void EnterInteractMode()
     {
-        if (vcamInteract == null)
+        if (vcamInteract == null || esconderijoCamera == null)
         {
-            Debug.LogWarning("[Interact] vcamInteract não atribuída.");
+            Debug.LogWarning("[Interact] vcamInteract ou esconderijoCamera não atribuídos.");
             return;
         }
 
-        // salva posição e rotação original
-        if (playerTransform != null)
-        {
-            playerPosOriginal = playerTransform.position;
-            playerRotOriginal = playerTransform.rotation;
+        // salva posição original antes de teleporte
+        originalPosition = playerTransform.position;
+        originalRotation = playerTransform.rotation;
 
-            // move player para o esconderijo
-            if (esconderijoCamera != null)
-            {
-                playerTransform.position = esconderijoCamera.position;
-                playerTransform.rotation = esconderijoCamera.rotation;
-            }
-        }
+        // teleporta player para o esconderijo antes da animação
+        MovePlayerToEsconderijoIgnoreCamera();
 
-        // disable player control
         if (playerControllerToDisable != null) playerControllerToDisable.enabled = false;
-
-        // hide prompt
         if (promptUI != null) promptUI.SetActive(false);
 
-        // define prioridade
-        int targetPriority;
-        if (interactPriorityOverride > 0) targetPriority = interactPriorityOverride;
-        else if (prioritiesStored) targetPriority = initialMainPriority + priorityBoost;
-        else
-        {
-            int mainP = (vcamMain != null) ? vcamMain.Priority : 10;
-            targetPriority = mainP + priorityBoost;
-        }
+        int targetPriority = interactPriorityOverride > 0 
+            ? interactPriorityOverride 
+            : (prioritiesStored ? initialMainPriority + priorityBoost : 10 + priorityBoost);
 
         vcamInteract.Priority = targetPriority;
         inInteractMode = true;
         isHidden = false;
 
-        // espera o blend e toca animação
         StartCoroutine(WaitForBlendThenHide());
     }
 
     void ExitInteractModeImmediateRestore()
     {
-        // restaura posição e rotação do player
-        if (playerTransform != null)
-        {
-            playerTransform.position = playerPosOriginal;
-            playerTransform.rotation = playerRotOriginal;
-        }
-
-        // restaura prioridades
         if (vcamInteract != null) vcamInteract.Priority = initialInteractPriority;
 
-        // reativa controles
+        // restaura player na posição original
+        RestorePlayerOriginalPosition();
+
         if (playerControllerToDisable != null) playerControllerToDisable.enabled = true;
 
         inInteractMode = false;
@@ -185,9 +159,7 @@ public class InteractHideEnterExit : MonoBehaviour
 
     IEnumerator ForceRestore()
     {
-        if (isHidden)
-            yield return StartCoroutine(PlayAnimationAndWait(exitTrigger, exitStateName));
-
+        if (isHidden) yield return StartCoroutine(PlayAnimationAndWait(exitTrigger, exitStateName));
         ExitInteractModeImmediateRestore();
     }
 
@@ -196,29 +168,23 @@ public class InteractHideEnterExit : MonoBehaviour
         if (!inInteractMode || !isHidden) yield break;
 
         yield return StartCoroutine(PlayAnimationAndWait(exitTrigger, exitStateName));
-
         ExitInteractModeImmediateRestore();
     }
 
-    // ---------- blend -> hide ----------
     IEnumerator WaitForBlendThenHide()
     {
-        CinemachineBrain brain = null;
-        if (Camera.main != null) brain = Camera.main.GetComponent<CinemachineBrain>();
-        if (brain == null) brain = FindObjectOfType<CinemachineBrain>();
-
+        CinemachineBrain brain = Camera.main != null ? Camera.main.GetComponent<CinemachineBrain>() : FindObjectOfType<CinemachineBrain>();
         if (brain == null)
         {
             yield return StartCoroutine(PlayAnimationAndWait(hideTrigger, hideStateName));
+            isHidden = true;
             yield break;
         }
 
         yield return null;
 
         while (brain.IsBlending || brain.ActiveVirtualCamera != (ICinemachineCamera)vcamInteract)
-        {
             yield return null;
-        }
 
         yield return StartCoroutine(PlayAnimationAndWait(hideTrigger, hideStateName));
         isHidden = true;
@@ -233,37 +199,28 @@ public class InteractHideEnterExit : MonoBehaviour
     IEnumerator AutoReturnAfterSeconds(float s)
     {
         yield return new WaitForSeconds(s);
-
         if (isHidden)
             yield return StartCoroutine(PlayAnimationAndWait(exitTrigger, exitStateName));
-
         ExitInteractModeImmediateRestore();
     }
 
     IEnumerator PlayAnimationAndWait(string triggerName, string stateName)
     {
-        if (doorAnimator == null)
-            yield break;
+        if (doorAnimator == null) yield break;
 
-        if (!string.IsNullOrEmpty(triggerName))
-            doorAnimator.SetTrigger(triggerName);
-        else if (!string.IsNullOrEmpty(stateName))
-            doorAnimator.Play(stateName, 0, 0f);
+        if (!string.IsNullOrEmpty(triggerName)) doorAnimator.SetTrigger(triggerName);
+        else if (!string.IsNullOrEmpty(stateName)) doorAnimator.Play(stateName, 0, 0f);
+        else yield break;
 
         bool stateReached = false;
         for (int i = 0; i < 60; i++)
         {
             var info = doorAnimator.GetCurrentAnimatorStateInfo(0);
-            if (info.IsName(stateName))
-            {
-                stateReached = true;
-                break;
-            }
+            if (info.IsName(stateName)) { stateReached = true; break; }
             yield return null;
         }
 
-        if (!stateReached)
-            yield return new WaitForSeconds(0.2f);
+        if (!stateReached) yield return new WaitForSeconds(0.2f);
 
         while (true)
         {
@@ -274,13 +231,34 @@ public class InteractHideEnterExit : MonoBehaviour
         }
     }
 
-    // utilidade
-    public void DisablePlayerCapsuleCollider()
+    // ---------- Player movement ----------
+    private void MovePlayerToEsconderijoIgnoreCamera()
     {
-        CapsuleCollider cachedPlayerCapsule = playerTransform?.GetComponent<CapsuleCollider>();
-        if (cachedPlayerCapsule != null) cachedPlayerCapsule.enabled = false;
+        if (playerTransform == null || esconderijoCamera == null) return;
+
+        playerTransform.position = esconderijoCamera.position;
+        playerTransform.rotation = esconderijoCamera.rotation;
+
+        foreach (Transform child in playerTransform)
+        {
+            if (child.CompareTag("MainCamera")) continue;
+            child.position = esconderijoCamera.position;
+            child.rotation = esconderijoCamera.rotation;
+        }
     }
 
-    public void ForceEnterInteract() => EnterInteractMode();
-    public void ForceExitInteract() => StartCoroutine(ForceRestore());
+    private void RestorePlayerOriginalPosition()
+    {
+        if (playerTransform == null) return;
+
+        playerTransform.position = originalPosition;
+        playerTransform.rotation = originalRotation;
+
+        foreach (Transform child in playerTransform)
+        {
+            if (child.CompareTag("MainCamera")) continue;
+            child.position = originalPosition;
+            child.rotation = originalRotation;
+        }
+    }
 }
