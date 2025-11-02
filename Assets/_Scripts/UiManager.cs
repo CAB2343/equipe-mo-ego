@@ -5,8 +5,8 @@ using TMPro;
 
 public class UiManager : MonoBehaviour
 {
-    private int ferraduras = 0;
-    private bool corda = false;
+    public int ferraduras = 0;
+    public bool corda = false;
     public GameObject pngFerra;
     public GameObject pngCorda;
     public TextMeshProUGUI textFerra;
