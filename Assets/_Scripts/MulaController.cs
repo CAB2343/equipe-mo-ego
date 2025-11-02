@@ -56,7 +56,7 @@ public class MulaController : MonoBehaviour
         if (state == State.Chase)
             ChasePlayer();
         else
-            Patrol();
+            Patrol(); 
     }
 
     bool CheckPlayerInSight()
