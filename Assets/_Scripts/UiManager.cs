@@ -34,6 +34,10 @@ public class UiManager : MonoBehaviour
         {
             textFerra.text = "" + ferraduras;
         }
+        else
+        {
+            textFerra.text = "";
+        }
     }
     
     public void AlterCorda(bool newCorda)
