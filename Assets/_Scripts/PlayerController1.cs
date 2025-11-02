@@ -2,7 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using UnityEngine.Audio;
 
+[RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(AudioSource))]
 public class PlayerController1 : MonoBehaviour
 {
     #region Variables
@@ -49,13 +52,17 @@ public class PlayerController1 : MonoBehaviour
     private float _groundedGraceTime = 0.2f;
 
     [Header("Hand Animation")]
-    public Animator handAnimator; // pode arrastar manualmente no Inspector
-
-    // estado interno para detectar ativação do Animator
+    public Animator handAnimator;
     private bool handAnimatorInitialized = false;
-    private bool desiredHandMoving = false; // alvo (true se player está se movendo)
+    private bool desiredHandMoving = false;
 
+    [Header("Footstep Settings")]
+    public AudioClip[] footstepSounds;
+    public float footstepInterval = 0.4f;
+    private float footstepTimer = 0f;
+    private AudioSource audioSource;
     #endregion
+        
 
     #region Unity Methods
     void Start()
@@ -75,76 +82,28 @@ public class PlayerController1 : MonoBehaviour
         targetCenter = originalCenter;
         targetCameraPos = originalCameraLocalPos;
 
-        // tenta buscar se não foi arrastado no Inspector
         if (handAnimator == null)
             handAnimator = GetComponentInChildren<Animator>();
 
-        // se o animator já estiver ativo, inicializa; caso contrário, espera ativação
         if (handAnimator != null && handAnimator.isActiveAndEnabled)
             InitializeHandAnimator();
-    }
 
-    void OnEnable()
-    {
-        // caso esse script seja reativado, verifica Animator
-        if (handAnimator != null && handAnimator.isActiveAndEnabled)
-            InitializeHandAnimator();
+        audioSource = GetComponent<AudioSource>();
     }
 
     void Update()
     {
-        // se a mãozinha for ativada por outro script durante o jogo,
-        // detectamos isso e inicializamos o Animator aqui
-        if (handAnimator != null)
-        {
-            if (handAnimator.isActiveAndEnabled && !handAnimatorInitialized)
-            {
-                InitializeHandAnimator();
-            }
-            else if (!handAnimator.isActiveAndEnabled && handAnimatorInitialized)
-            {
-                // Animator foi desativado novamente -- marca como não inicializado
-                handAnimatorInitialized = false;
-            }
-        }
-
-        if (mainMenu != null && mainMenu.activeSelf)
-        {
-            Cursor.visible = true;
-            Cursor.lockState = CursorLockMode.None;
-            if (povCamera != null) povCamera.SetActive(false);
-            if (CamEsconderijo != null) CamEsconderijo.SetActive(false);
-            if (CamEsconderijo2 != null) CamEsconderijo2.SetActive(false);
-            if (CamEsconderijo3 != null) CamEsconderijo3.SetActive(false);
-            if (CamEsconderijo4 != null) CamEsconderijo4.SetActive(false);
-            _EnableMovement = false;
-            _EnableJump =  false;
-        }
-        else
-        {
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
-            if (povCamera != null) povCamera.SetActive(true);
-            if (CamEsconderijo != null) CamEsconderijo.SetActive(true);
-            if (CamEsconderijo2 != null) CamEsconderijo2.SetActive(true);
-            if (CamEsconderijo3 != null) CamEsconderijo3.SetActive(true);
-            if (CamEsconderijo4 != null) CamEsconderijo4.SetActive(true);
-            _EnableMovement = false;
-            _EnableMovement = true;
-            _EnableJump =  true;
-        }
+        HandleMenuState();
 
         if (_EnableMovement) Movement();
+        if (_EnableMovement) HandleFootsteps();
         if (_EnableGravity) NormalGravity();
         if (_EnableJump) Jump();
         HandleGrounding();
         HandleCrouch();
 
-        // aplica desiredHandMoving (caso o animator já tenha sido inicializado)
         if (handAnimator != null && handAnimatorInitialized)
-        {
             handAnimator.speed = desiredHandMoving ? 1f : 0f;
-        }
     }
     #endregion
 
@@ -157,7 +116,7 @@ public class PlayerController1 : MonoBehaviour
         float VerticalInput = Input.GetAxisRaw("Vertical");
 
         bool hasInput = Mathf.Abs(HorizontalInput) > 0.1f || Mathf.Abs(VerticalInput) > 0.1f;
-        desiredHandMoving = hasInput && _IsGrounded; // armazenamos o desejo de mover da mão
+        desiredHandMoving = hasInput && _IsGrounded;
 
         Vector3 moveDirection = new Vector3(HorizontalInput, 0, VerticalInput).normalized;
 
@@ -176,12 +135,6 @@ public class PlayerController1 : MonoBehaviour
                 Quaternion.LookRotation(moveDirection),
                 _RotationSpeed * Time.deltaTime
             );
-        }
-
-        // Se o animator já está inicializado, atualizamos a velocidade aqui também (opcional)
-        if (handAnimator != null && handAnimatorInitialized)
-        {
-            handAnimator.speed = desiredHandMoving ? 1f : 0f;
         }
     }
     #endregion
@@ -266,24 +219,83 @@ public class PlayerController1 : MonoBehaviour
     }
     #endregion
 
-    #region Hand Animator Helpers
+    #region Hand Animator
     private void InitializeHandAnimator()
     {
-        // segurança: se não existir, tenta obter
         if (handAnimator == null)
         {
             handAnimator = GetComponentInChildren<Animator>();
             if (handAnimator == null) return;
         }
 
-        // Rebind + Update força o Animator a inicializar corretamente
         handAnimator.Rebind();
         handAnimator.Update(0f);
-
-        // aplica a velocidade desejada atual (se o player estiver andando)
         handAnimator.speed = desiredHandMoving ? 1f : 0f;
-
         handAnimatorInitialized = true;
+    }
+    #endregion
+
+    void HandleFootsteps()
+    {
+        if (footstepSounds == null || footstepSounds.Length == 0) return;
+        if (!_IsGrounded) 
+        {
+            audioSource.Stop();
+            return;
+        }
+
+        float horizontal = Input.GetAxisRaw("Horizontal");
+        float vertical = Input.GetAxisRaw("Vertical");
+        bool isMoving = Mathf.Abs(horizontal) > 0.1f || Mathf.Abs(vertical) > 0.1f;
+
+        if (isMoving)
+        {
+            footstepTimer -= Time.deltaTime;
+            if (footstepTimer <= 0f)
+            {
+                // Seleciona um clip aleatório
+                audioSource.clip = footstepSounds[UnityEngine.Random.Range(0, footstepSounds.Length)];
+                audioSource.Play();
+                footstepTimer = footstepInterval;
+            }
+        }
+        else
+        {
+            if (audioSource.isPlaying)
+                audioSource.Stop(); // interrompe imediatamente se o jogador parar
+            footstepTimer = 0f;
+        }
+    }
+
+
+    #region Menu
+    void HandleMenuState()
+    {
+        if (mainMenu != null && mainMenu.activeSelf)
+        {
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+            SetCamerasActive(false);
+            _EnableMovement = false;
+            _EnableJump = false;
+        }
+        else
+        {
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+            SetCamerasActive(true);
+            _EnableMovement = true;
+            _EnableJump = true;
+        }
+    }
+
+    void SetCamerasActive(bool state)
+    {
+        if (povCamera != null) povCamera.SetActive(state);
+        if (CamEsconderijo != null) CamEsconderijo.SetActive(state);
+        if (CamEsconderijo2 != null) CamEsconderijo2.SetActive(state);
+        if (CamEsconderijo3 != null) CamEsconderijo3.SetActive(state);
+        if (CamEsconderijo4 != null) CamEsconderijo4.SetActive(state);
     }
     #endregion
 }
