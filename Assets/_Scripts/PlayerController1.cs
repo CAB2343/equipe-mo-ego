@@ -11,6 +11,10 @@ public class PlayerController1 : MonoBehaviour
     [NonSerialized] public Transform _MyCamera;
     public GameObject mainMenu;
     public GameObject povCamera;
+    public GameObject CamEsconderijo;
+    public GameObject CamEsconderijo2;
+    public GameObject CamEsconderijo3;
+    public GameObject CamEsconderijo4;
 
     [Header("Gravity Settings")]
     public bool _EnableGravity = true;
@@ -109,6 +113,10 @@ public class PlayerController1 : MonoBehaviour
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
             if (povCamera != null) povCamera.SetActive(false);
+            if (CamEsconderijo != null) CamEsconderijo.SetActive(false);
+            if (CamEsconderijo2 != null) CamEsconderijo2.SetActive(false);
+            if (CamEsconderijo3 != null) CamEsconderijo3.SetActive(false);
+            if (CamEsconderijo4 != null) CamEsconderijo4.SetActive(false);
             _EnableMovement = false;
             _EnableJump =  false;
         }
@@ -117,6 +125,11 @@ public class PlayerController1 : MonoBehaviour
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
             if (povCamera != null) povCamera.SetActive(true);
+            if (CamEsconderijo != null) CamEsconderijo.SetActive(true);
+            if (CamEsconderijo2 != null) CamEsconderijo2.SetActive(true);
+            if (CamEsconderijo3 != null) CamEsconderijo3.SetActive(true);
+            if (CamEsconderijo4 != null) CamEsconderijo4.SetActive(true);
+            _EnableMovement = false;
             _EnableMovement = true;
             _EnableJump =  true;
         }
