@@ -14,6 +14,8 @@ public class SoundsManager : MonoBehaviour
     public AudioMixer audioMixer;
     private float oldVolume;
 
+    public int atualMusic;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {

@@ -1,42 +1,49 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Poco : MonoBehaviour
 {
     [Header("Configuração")]
-    public float posicaoAlvoY = 0.7088f;   // posição final no eixo Y
-    public float duracao = 1f;        // tempo da transição
+    [Tooltip("Quanto a ferradura sobe em relação à posição atual")]
+    public float alturaSubida = 2f;
 
-    private bool emTransicao = false;
+    private bool permiteSubir = true;
+
+    [Tooltip("Tempo que leva para a ferradura subir")]
+    public float duracao = 1f;
+
+    [Header("Referências")]
     public UiManager uiManager;
     public GameObject ferradura;
-    
-    // Start is called before the first frame update
+
+    private bool emTransicao = false;
+
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
         {
-            if (uiManager.corda)
+            if (uiManager != null && uiManager.corda && !emTransicao)
             {
-                MoverAtePosicaoY();
+                Debug.Log("SOBE");
+                MoverAteAltura();
             }
-            
         }
     }
-    
-    public void MoverAtePosicaoY()
+
+    public void MoverAteAltura()
     {
-        if (!emTransicao)
-            StartCoroutine(MoverFerradura(posicaoAlvoY));
+        if (ferradura != null && permiteSubir)
+            StartCoroutine(MoverFerradura());
+        else
+            Debug.LogWarning("Ferradura não atribuída no Inspector!");
     }
 
-    private IEnumerator MoverFerradura(float destinoY)
+    private IEnumerator MoverFerradura()
     {
         emTransicao = true;
 
-        Vector3 inicio = transform.localPosition;
-        Vector3 destino = new Vector3(inicio.x, destinoY, inicio.z);
+        Vector3 inicio = ferradura.transform.localPosition;
+        Vector3 destino = inicio + new Vector3(0f, alturaSubida, 0f);
 
         float tempo = 0f;
 
@@ -44,11 +51,12 @@ public class Poco : MonoBehaviour
         {
             tempo += Time.deltaTime;
             float t = Mathf.Clamp01(tempo / duracao);
-            transform.localPosition = Vector3.Lerp(inicio, destino, t);
+            ferradura.transform.localPosition = Vector3.Lerp(inicio, destino, t);
             yield return null;
         }
 
-        transform.localPosition = destino;
+        ferradura.transform.localPosition = destino;
         emTransicao = false;
+        permiteSubir = false;
     }
 }

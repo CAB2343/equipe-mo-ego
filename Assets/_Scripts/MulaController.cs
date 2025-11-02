@@ -4,7 +4,9 @@ using UnityEngine;
 public class MulaController : MonoBehaviour
 {
     public enum State { Patrol, Chase }
+    private State lastState;
     public MenuManager menuManager;
+    public GameObject canvas;
 
     [Header("Waypoints")]
     public Transform[] waypoints;
@@ -65,16 +67,32 @@ public class MulaController : MonoBehaviour
         if (state == State.Chase)
         {
             ChasePlayer();
-            sounds.ChangeTheme(2);
             sounds.AjustarVolumePorDistancia(dist, viewDistance);
             veio = false;
         }
         else
         {
-            Patrol();
-            sounds.ChangeTheme(1);
-            sounds.ReajustarVolume();
-            veio = true;
+            if (!canvas.activeSelf)
+            {
+                Patrol();
+                sounds.ReajustarVolume();
+                veio = true;
+            }
+            
+        }
+        
+        if (state != lastState)
+        {
+            if (state == State.Chase)
+            {
+                sounds.ChangeTheme(2);
+            }
+            else if (state == State.Patrol)
+            {
+                sounds.ChangeTheme(1);
+            }
+
+            lastState = state; // atualiza o estado anterior
         }
     }
 

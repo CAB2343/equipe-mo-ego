@@ -12,7 +12,7 @@ public class Pentagrama : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            if (uiManager.ferraduras == 5)
+            if (uiManager.ferraduras == 6)
             {
                 Destroy(mula);
                 menuManager.Venceu();
