@@ -14,7 +14,9 @@ public class UiManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        pngFerra.SetActive(false);
+        pngCorda.SetActive(false);
+        textFerra.text = "";
     }
 
     // Update is called once per frame
@@ -33,10 +35,6 @@ public class UiManager : MonoBehaviour
         if (ferraduras > 1)
         {
             textFerra.text = "" + ferraduras;
-        }
-        else
-        {
-            textFerra.text = "";
         }
     }
     
