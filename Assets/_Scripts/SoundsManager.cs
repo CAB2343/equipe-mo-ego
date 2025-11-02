@@ -44,8 +44,10 @@ public class SoundsManager : MonoBehaviour
 
     public void AjustarVolumePorDistancia(float distancia, float maxDistance)
     {
-        float novoVolume = Mathf.Clamp01(1 - (distancia / maxDistance)) * audioSource.volume;
-        audioSource.volume = novoVolume;
+        float fatorVolume = Mathf.Clamp01(1f - (distancia / maxDistance));
+        //float novoVolume = Mathf.Clamp01(1 - (distancia / maxDistance)) * audioSource.volume;
+        audioSource.volume = fatorVolume * 1;
+        //audioSource.volume = novoVolume;
     }
 
     public void ReajustarVolume()

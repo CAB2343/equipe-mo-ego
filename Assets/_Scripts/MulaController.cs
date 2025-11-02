@@ -4,6 +4,7 @@ using UnityEngine;
 public class MulaController : MonoBehaviour
 {
     public enum State { Patrol, Chase }
+    public MenuManager menuManager;
 
     [Header("Waypoints")]
     public Transform[] waypoints;
@@ -24,11 +25,15 @@ public class MulaController : MonoBehaviour
     private Rigidbody rb;
     private int currentWaypointIndex = 0;
     private bool movingForward = true;
-    private State state = State.Patrol;
+    public State state = State.Patrol;
     private float dist;
+
+    private bool playerDead = false;
 
     [Header("Som")] 
     public SoundsManager sounds;
+
+    public bool veio = true;
     
     void Start()
     {
@@ -62,12 +67,14 @@ public class MulaController : MonoBehaviour
             ChasePlayer();
             sounds.ChangeTheme(2);
             sounds.AjustarVolumePorDistancia(dist, viewDistance);
+            veio = false;
         }
         else
         {
             Patrol();
             sounds.ChangeTheme(1);
             sounds.ReajustarVolume();
+            veio = true;
         }
     }
 
@@ -92,7 +99,11 @@ public class MulaController : MonoBehaviour
             // atingiu um obstáculo antes de chegar no jogador -> não viu
             return false;
         }
-        
+
+        if (playerDead)
+        {
+            return false;
+        }
         // nenhum obstáculo bloqueando -> viu o jogador
         return true;
     }
@@ -181,6 +192,16 @@ public class MulaController : MonoBehaviour
             bool v = CheckPlayerInSight();
             Gizmos.color = v ? Color.green : Color.gray;
             Gizmos.DrawLine(transform.position + Vector3.up * 1.0f, player.position + Vector3.up * 1.0f);
+        }
+    }
+    
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            state = State.Patrol;
+            playerDead = true;
+            menuManager.Perdeu();
         }
     }
 }
