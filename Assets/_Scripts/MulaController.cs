@@ -18,7 +18,7 @@ public class MulaController : MonoBehaviour
     public float rotationSpeed = 5f;
 
     [Header("Visão")]
-    [Range(0f, 180f)] public float fieldOfViewAngle = 90f;
+    [Range(0f, 360f)] public float fieldOfViewAngle = 90f;
     public float viewDistance = 10f;
     public LayerMask obstacleMask;
     public string playerTag = "Player";
