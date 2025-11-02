@@ -6,7 +6,6 @@ using System;
 public class PlayerController1 : MonoBehaviour
 {
     #region Variables
-
     [Header("Camera Settings")]
     public bool _FPSCamera = true;
     [NonSerialized] public Transform _MyCamera;
@@ -45,8 +44,12 @@ public class PlayerController1 : MonoBehaviour
     private float _groundedTimer = 0f;
     private float _groundedGraceTime = 0.2f;
 
-    // 🔹 Animator da mãozinha
-    public Animator handAnimator;
+    [Header("Hand Animation")]
+    public Animator handAnimator; // pode arrastar manualmente no Inspector
+
+    // estado interno para detectar ativação do Animator
+    private bool handAnimatorInitialized = false;
+    private bool desiredHandMoving = false; // alvo (true se player está se movendo)
 
     #endregion
 
@@ -68,23 +71,50 @@ public class PlayerController1 : MonoBehaviour
         targetCenter = originalCenter;
         targetCameraPos = originalCameraLocalPos;
 
-        // 🔹 Acha o Animator da mãozinha (filho do player)
-        handAnimator = GetComponentInChildren<Animator>();
+        // tenta buscar se não foi arrastado no Inspector
+        if (handAnimator == null)
+            handAnimator = GetComponentInChildren<Animator>();
+
+        // se o animator já estiver ativo, inicializa; caso contrário, espera ativação
+        if (handAnimator != null && handAnimator.isActiveAndEnabled)
+            InitializeHandAnimator();
+    }
+
+    void OnEnable()
+    {
+        // caso esse script seja reativado, verifica Animator
+        if (handAnimator != null && handAnimator.isActiveAndEnabled)
+            InitializeHandAnimator();
     }
 
     void Update()
     {
-        if (mainMenu.activeSelf)
+        // se a mãozinha for ativada por outro script durante o jogo,
+        // detectamos isso e inicializamos o Animator aqui
+        if (handAnimator != null)
+        {
+            if (handAnimator.isActiveAndEnabled && !handAnimatorInitialized)
+            {
+                InitializeHandAnimator();
+            }
+            else if (!handAnimator.isActiveAndEnabled && handAnimatorInitialized)
+            {
+                // Animator foi desativado novamente -- marca como não inicializado
+                handAnimatorInitialized = false;
+            }
+        }
+
+        if (mainMenu != null && mainMenu.activeSelf)
         {
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
-            povCamera.SetActive(false);
+            if (povCamera != null) povCamera.SetActive(false);
         }
         else
         {
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
-            povCamera.SetActive(true);
+            if (povCamera != null) povCamera.SetActive(true);
         }
 
         if (_EnableMovement) Movement();
@@ -92,6 +122,12 @@ public class PlayerController1 : MonoBehaviour
         if (_EnableJump) Jump();
         HandleGrounding();
         HandleCrouch();
+
+        // aplica desiredHandMoving (caso o animator já tenha sido inicializado)
+        if (handAnimator != null && handAnimatorInitialized)
+        {
+            handAnimator.speed = desiredHandMoving ? 1f : 0f;
+        }
     }
     #endregion
 
@@ -103,8 +139,8 @@ public class PlayerController1 : MonoBehaviour
         float HorizontalInput = Input.GetAxisRaw("Horizontal");
         float VerticalInput = Input.GetAxisRaw("Vertical");
 
-        // 🔹 Calcula o input puro do jogador
         bool hasInput = Mathf.Abs(HorizontalInput) > 0.1f || Mathf.Abs(VerticalInput) > 0.1f;
+        desiredHandMoving = hasInput && _IsGrounded; // armazenamos o desejo de mover da mão
 
         Vector3 moveDirection = new Vector3(HorizontalInput, 0, VerticalInput).normalized;
 
@@ -125,13 +161,15 @@ public class PlayerController1 : MonoBehaviour
             );
         }
 
-        // 🔹 Controla a animação da mãozinha
-        if (handAnimator != null)
+        // Se o animator já está inicializado, atualizamos a velocidade aqui também (opcional)
+        if (handAnimator != null && handAnimatorInitialized)
         {
-            handAnimator.SetBool("isMoving", hasInput && _IsGrounded);
+            handAnimator.speed = desiredHandMoving ? 1f : 0f;
         }
     }
+    #endregion
 
+    #region Crouch
     void HandleCrouch()
     {
         if (_ChController == null) return;
@@ -208,6 +246,27 @@ public class PlayerController1 : MonoBehaviour
         }
 
         _IsGrounded = _groundedTimer > 0f;
+    }
+    #endregion
+
+    #region Hand Animator Helpers
+    private void InitializeHandAnimator()
+    {
+        // segurança: se não existir, tenta obter
+        if (handAnimator == null)
+        {
+            handAnimator = GetComponentInChildren<Animator>();
+            if (handAnimator == null) return;
+        }
+
+        // Rebind + Update força o Animator a inicializar corretamente
+        handAnimator.Rebind();
+        handAnimator.Update(0f);
+
+        // aplica a velocidade desejada atual (se o player estiver andando)
+        handAnimator.speed = desiredHandMoving ? 1f : 0f;
+
+        handAnimatorInitialized = true;
     }
     #endregion
 }
