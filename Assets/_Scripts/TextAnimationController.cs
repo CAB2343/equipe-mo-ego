@@ -316,6 +316,42 @@ public class TextAnimationController : MonoBehaviour
         }
     }
 
+    // ---------- MÉTODOS PÚBLICOS ADICIONADOS (NÃO ALTERAM O RESTANTE DO ARQUIVO) ----------
+    // Retorna true se a animação tipo-writer ainda está exibindo caracteres (ainda não terminou)
+    public bool IsTyping()
+    {
+        // Se typewriter não estiver ativado, então não está "digitando"
+        if (!typewriter.enabled) return false;
+        // Se já "skipped" -> não está digitando
+        if (skipped) return false;
+        // Usamos visibleCharacterCount comparado ao comprimento do texto
+        return visibleCharacterCount < (originalText != null ? originalText.Length : 0);
+    }
+
+    // Força mostrar todo o texto / pular animação
+    public void SkipTypewriter()
+    {
+        skipped = true;
+        visibleCharacterCount = (originalText != null ? originalText.Length : 0);
+        tmpText.maxVisibleCharacters = visibleCharacterCount;
+        tmpText.ForceMeshUpdate();
+    }
+
+    // Inicia/define novo texto e (opcionalmente) reseta estado de skip
+    public void PlayText(string newText, bool resetSkip = true)
+    {
+        SetText(newText);
+        if (resetSkip) skipped = false;
+    }
+
+    // Indica se o texto já terminou de exibir (completou a digitação)
+    public bool IsFinished()
+    {
+        if (originalText == null) return true;
+        return tmpText.maxVisibleCharacters >= originalText.Length;
+    }
+    // ------------------------------------------------------------------------------------
+
     private void PlayCharSound()
     {
         if (audioSource != null && charSound != null)
