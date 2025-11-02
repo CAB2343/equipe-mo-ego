@@ -109,12 +109,16 @@ public class PlayerController1 : MonoBehaviour
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
             if (povCamera != null) povCamera.SetActive(false);
+            _EnableMovement = false;
+            _EnableJump =  false;
         }
         else
         {
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
             if (povCamera != null) povCamera.SetActive(true);
+            _EnableMovement = true;
+            _EnableJump =  true;
         }
 
         if (_EnableMovement) Movement();
