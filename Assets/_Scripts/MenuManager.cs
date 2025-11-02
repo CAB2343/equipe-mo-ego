@@ -14,6 +14,7 @@ public class MenuManager : MonoBehaviour
     [SerializeField] private AudioSource sound;
     [SerializeField] private GameObject canvas;
     [SerializeField] private GameObject canvasGame;
+    [SerializeField] private SoundsManager soundsManager;
 
     void Start()
     {
@@ -60,5 +61,6 @@ public class MenuManager : MonoBehaviour
         }
         canvas.SetActive(false);
         canvasGame.SetActive(true);
+        soundsManager.ChangeTheme(1);
     }
 }

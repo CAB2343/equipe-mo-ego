@@ -5,18 +5,20 @@ using UnityEngine.Audio;
 
 public class SoundsManager : MonoBehaviour
 {
-    // Definição de lista
-    public List<AudioClip> listSoundEffects = new List<AudioClip>();
+    // Definiï¿½ï¿½o de lista
+    public List<AudioClip> listSounds = new List<AudioClip>();
 
-    // Definição de variaveis audio
+    // Definiï¿½ï¿½o de variaveis audio
     private AudioClip sound;
     public AudioSource audioSource;
     public AudioMixer audioMixer;
+    private float oldVolume;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         audioSource = GetComponent<AudioSource>();
+        oldVolume = audioSource.volume;
     }
 
     // Update is called once per frame
@@ -26,9 +28,28 @@ public class SoundsManager : MonoBehaviour
 
     public void SoundPlay(int index)
     {
-        sound = listSoundEffects[index];
+        sound = listSounds[index];
         audioMixer.GetFloat("Volume", out float effectsVolumeDB);
         float effectsVolume = Mathf.Pow(10f, effectsVolumeDB / 20f);
         audioSource.PlayOneShot(sound, effectsVolume); 
+    }
+
+    public void ChangeTheme(int index)
+    {
+        audioSource.Stop();
+        audioSource.clip = listSounds[index];
+        audioSource.loop = true;
+        audioSource.Play();
+    }
+
+    public void AjustarVolumePorDistancia(float distancia, float maxDistance)
+    {
+        float novoVolume = Mathf.Clamp01(1 - (distancia / maxDistance)) * audioSource.volume;
+        audioSource.volume = novoVolume;
+    }
+
+    public void ReajustarVolume()
+    {
+        audioSource.volume = oldVolume;
     }
 }

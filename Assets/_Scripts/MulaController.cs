@@ -25,7 +25,11 @@ public class MulaController : MonoBehaviour
     private int currentWaypointIndex = 0;
     private bool movingForward = true;
     private State state = State.Patrol;
+    private float dist;
 
+    [Header("Som")] 
+    public SoundsManager sounds;
+    
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -38,7 +42,7 @@ public class MulaController : MonoBehaviour
             if (p != null) player = p.transform;
         }
     }
-
+    
     void FixedUpdate()
     {
         // checa visão do jogador primeiro (se existir)
@@ -54,9 +58,17 @@ public class MulaController : MonoBehaviour
 
         // comportamento por estado
         if (state == State.Chase)
+        {
             ChasePlayer();
+            sounds.ChangeTheme(2);
+            sounds.AjustarVolumePorDistancia(dist, viewDistance);
+        }
         else
+        {
             Patrol();
+            sounds.ChangeTheme(1);
+            sounds.ReajustarVolume();
+        }
     }
 
     bool CheckPlayerInSight()
@@ -73,14 +85,14 @@ public class MulaController : MonoBehaviour
         Vector3 origin = transform.position + Vector3.up * 1.0f; // ajuste se necessário
         Vector3 targetPos = player.position + Vector3.up * 1.0f;
         Vector3 dir = (targetPos - origin).normalized;
-        float dist = Vector3.Distance(origin, targetPos);
+        dist = Vector3.Distance(origin, targetPos);
 
         if (Physics.Raycast(origin, dir, out RaycastHit hit, dist, obstacleMask))
         {
             // atingiu um obstáculo antes de chegar no jogador -> não viu
             return false;
         }
-
+        
         // nenhum obstáculo bloqueando -> viu o jogador
         return true;
     }
