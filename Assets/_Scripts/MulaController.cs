@@ -25,13 +25,15 @@ public class MulaController : MonoBehaviour
     private Rigidbody rb;
     private int currentWaypointIndex = 0;
     private bool movingForward = true;
-    private State state = State.Patrol;
+    public State state = State.Patrol;
     private float dist;
 
     private bool playerDead = false;
 
     [Header("Som")] 
     public SoundsManager sounds;
+
+    public bool veio = true;
     
     void Start()
     {
@@ -65,12 +67,14 @@ public class MulaController : MonoBehaviour
             ChasePlayer();
             sounds.ChangeTheme(2);
             sounds.AjustarVolumePorDistancia(dist, viewDistance);
+            veio = false;
         }
         else
         {
             Patrol();
             sounds.ChangeTheme(1);
             sounds.ReajustarVolume();
+            veio = true;
         }
     }
 
