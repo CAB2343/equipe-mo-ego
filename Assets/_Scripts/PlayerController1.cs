@@ -124,13 +124,12 @@ public class PlayerController1 : MonoBehaviour
                 _RotationSpeed * Time.deltaTime
             );
         }
-        
+
+        // 🔹 Controla a animação da mãozinha
         if (handAnimator != null)
         {
-            bool isMoving = hasInput && _IsGrounded;
-            handAnimator.speed = isMoving ? 1f : 0f; // pausa a animação quando parado
+            handAnimator.SetBool("isMoving", hasInput && _IsGrounded);
         }
-
     }
 
     void HandleCrouch()
