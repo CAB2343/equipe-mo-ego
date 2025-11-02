@@ -9,6 +9,9 @@ public class PlayerController1 : MonoBehaviour
     [Header("Camera Settings")]
     public bool _FPSCamera = true;
     [NonSerialized] public Transform _MyCamera;
+    public GameObject mainMenu;
+    public GameObject povCamera;
+    
 
     [Header("Gravity Settings")]
     public bool _EnableGravity = true;
@@ -60,6 +63,7 @@ public class PlayerController1 : MonoBehaviour
         originalHeight = _ChController.height;
         originalCenter = _ChController.center;
         if (_MyCamera != null)  originalCameraLocalPos = _MyCamera.localPosition;
+        
 
         targetHeight = originalHeight;
         targetCenter = originalCenter;
@@ -68,7 +72,18 @@ public class PlayerController1 : MonoBehaviour
 
     void Update()
     {
-
+        if (mainMenu.activeSelf)
+        {
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+            povCamera.SetActive(false);
+        }
+        else
+        {
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+            povCamera.SetActive(true);
+        }
 
         if (_EnableMovement) Movement();        
         if (_EnableGravity) NormalGravity();
