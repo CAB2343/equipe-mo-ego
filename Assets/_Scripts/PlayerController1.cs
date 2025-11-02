@@ -102,21 +102,21 @@ public class PlayerController1 : MonoBehaviour
 
         float HorizontalInput = Input.GetAxisRaw("Horizontal");
         float VerticalInput = Input.GetAxisRaw("Vertical");
+
+        // 🔹 Calcula o input puro do jogador
+        bool hasInput = Mathf.Abs(HorizontalInput) > 0.1f || Mathf.Abs(VerticalInput) > 0.1f;
+
         Vector3 moveDirection = new Vector3(HorizontalInput, 0, VerticalInput).normalized;
 
         if (_MyCamera != null)
-        {
             moveDirection = _MyCamera.TransformDirection(moveDirection);
-        }
         else
-        {
             moveDirection = transform.TransformDirection(moveDirection);
-        }
 
         moveDirection.y = 0;
         _ChController.Move(moveDirection * _MoveSpeed * Time.deltaTime);
 
-        if (moveDirection != Vector3.zero && _FPSCamera == false)
+        if (moveDirection != Vector3.zero && !_FPSCamera)
         {
             transform.rotation = Quaternion.Slerp(
                 transform.rotation,
@@ -124,13 +124,13 @@ public class PlayerController1 : MonoBehaviour
                 _RotationSpeed * Time.deltaTime
             );
         }
-
-        // 🔹 Controla a animação da mãozinha
-        bool isMoving = moveDirection.magnitude > 0.1f;
+        
         if (handAnimator != null)
         {
-            handAnimator.SetBool("isMoving", isMoving);
+            bool isMoving = hasInput && _IsGrounded;
+            handAnimator.speed = isMoving ? 1f : 0f; // pausa a animação quando parado
         }
+
     }
 
     void HandleCrouch()
