@@ -7,8 +7,8 @@ public class InteractHideEnterExit : MonoBehaviour
 {
     [Header("Player detection")]
     public string playerTag = "Player";
-    public Transform playerTransform; // optional direct reference
-    public bool returnOnExit = true;  // volta ao sair da trigger
+    public Transform playerTransform; // referência opcional
+    public bool returnOnExit = true;  // retorna se sair do trigger
 
     [Header("Cinemachine (VCams)")]
     public CinemachineVirtualCamera vcamMain;
@@ -19,29 +19,32 @@ public class InteractHideEnterExit : MonoBehaviour
     public int priorityBoost = 10;            // se override == -1 usa main + boost
 
     [Header("Behavior")]
-    public MonoBehaviour playerControllerToDisable; // optional: seu script de movimento
-    public GameObject promptUI;                    // optional: "Press F"
-    public float interactDuration = 0f;            // 0 = manual (não usado nesse fluxo)
+    public MonoBehaviour playerControllerToDisable; // script de movimento
+    public GameObject promptUI;                    // "Press F"
+    public float interactDuration = 0f;            // 0 = manual
 
     [Header("Animator / States")]
-    public Animator doorAnimator;              // animator que contém os estados
-    public string hideTrigger = "Esconder";    // trigger para animação de entrar (escondendo)
-    public string hideStateName = "escondendo";// state name no Animator após disparo
-    public string exitTrigger = "Sair";        // trigger para animação de sair (saindo)
-    public string exitStateName = "saindo";    // state name para a animação de saída
+    public Animator doorAnimator;              
+    public string hideTrigger = "Esconder";    
+    public string hideStateName = "escondendo";
+    public string exitTrigger = "Sair";        
+    public string exitStateName = "saindo";
+
+    [Header("Esconderijo Transform")]
+    public Transform esconderijoCamera; // transform da câmera do esconderijo
 
     // internal state
-    bool playerNearby = false;
-    bool inInteractMode = false;
-    bool isHidden = false; // true quando a animação "escondendo" terminou
-    Coroutine autoReturnCoroutine = null;
+    private bool playerNearby = false;
+    private bool inInteractMode = false;
+    private bool isHidden = false; 
+    private Coroutine autoReturnCoroutine = null;
 
-    int initialMainPriority = 0;
-    int initialInteractPriority = 0;
-    bool prioritiesStored = false;
+    private int initialMainPriority = 0;
+    private int initialInteractPriority = 0;
+    private bool prioritiesStored = false;
 
-    // cache opcional do capsule do player caso queira reativar depois
-    CapsuleCollider cachedPlayerCapsule = null;
+    private Vector3 playerPosOriginal;
+    private Quaternion playerRotOriginal;
 
     void Reset()
     {
@@ -73,9 +76,6 @@ public class InteractHideEnterExit : MonoBehaviour
             }
             else
             {
-                // se estamos no modo de interação:
-                // - se ainda não terminou a animação de esconder, ignoramos (ou você pode cancelar)
-                // - se já está escondido, então apertar F toca a animação de saída
                 if (isHidden)
                 {
                     StartCoroutine(PlayExitAndRestore());
@@ -102,7 +102,6 @@ public class InteractHideEnterExit : MonoBehaviour
 
             if (returnOnExit && inInteractMode)
             {
-                // Se o jogador sair enquanto em modo de interação, força saída (roda a animação de sair se já estiver escondido, senão só restaura)
                 StartCoroutine(ForceRestore());
             }
         }
@@ -125,13 +124,27 @@ public class InteractHideEnterExit : MonoBehaviour
             return;
         }
 
+        // salva posição e rotação original
+        if (playerTransform != null)
+        {
+            playerPosOriginal = playerTransform.position;
+            playerRotOriginal = playerTransform.rotation;
+
+            // move player para o esconderijo
+            if (esconderijoCamera != null)
+            {
+                playerTransform.position = esconderijoCamera.position;
+                playerTransform.rotation = esconderijoCamera.rotation;
+            }
+        }
+
         // disable player control
         if (playerControllerToDisable != null) playerControllerToDisable.enabled = false;
 
         // hide prompt
         if (promptUI != null) promptUI.SetActive(false);
 
-        // determina prioridade alvo
+        // define prioridade
         int targetPriority;
         if (interactPriorityOverride > 0) targetPriority = interactPriorityOverride;
         else if (prioritiesStored) targetPriority = initialMainPriority + priorityBoost;
@@ -141,21 +154,27 @@ public class InteractHideEnterExit : MonoBehaviour
             targetPriority = mainP + priorityBoost;
         }
 
-        // aplica somente na vcamInteract
         vcamInteract.Priority = targetPriority;
         inInteractMode = true;
         isHidden = false;
 
-        // espera o blend terminar, então toca a animação de esconder
+        // espera o blend e toca animação
         StartCoroutine(WaitForBlendThenHide());
     }
 
     void ExitInteractModeImmediateRestore()
     {
-        // Restaura prioridade original da vcamInteract
+        // restaura posição e rotação do player
+        if (playerTransform != null)
+        {
+            playerTransform.position = playerPosOriginal;
+            playerTransform.rotation = playerRotOriginal;
+        }
+
+        // restaura prioridades
         if (vcamInteract != null) vcamInteract.Priority = initialInteractPriority;
 
-        // reativa o player
+        // reativa controles
         if (playerControllerToDisable != null) playerControllerToDisable.enabled = true;
 
         inInteractMode = false;
@@ -166,24 +185,18 @@ public class InteractHideEnterExit : MonoBehaviour
 
     IEnumerator ForceRestore()
     {
-        // Se já estamos escondidos, faça a animação de saída antes de restaurar.
         if (isHidden)
-        {
             yield return StartCoroutine(PlayAnimationAndWait(exitTrigger, exitStateName));
-        }
 
         ExitInteractModeImmediateRestore();
     }
 
-    // Ao apertar F novamente enquanto escondido -> toca "saindo" e depois restaura
     IEnumerator PlayExitAndRestore()
     {
         if (!inInteractMode || !isHidden) yield break;
 
-        // toca a animação de saída e espera terminar
         yield return StartCoroutine(PlayAnimationAndWait(exitTrigger, exitStateName));
 
-        // restaura câmera / controles
         ExitInteractModeImmediateRestore();
     }
 
@@ -196,25 +209,20 @@ public class InteractHideEnterExit : MonoBehaviour
 
         if (brain == null)
         {
-            Debug.LogWarning("[Interact] CinemachineBrain não encontrado. Tocando animação imediatamente.");
             yield return StartCoroutine(PlayAnimationAndWait(hideTrigger, hideStateName));
             yield break;
         }
 
-        // espera um frame pra brain atualizar
         yield return null;
 
-        // espera blend terminar e vcamInteract estar ativa
         while (brain.IsBlending || brain.ActiveVirtualCamera != (ICinemachineCamera)vcamInteract)
         {
             yield return null;
         }
 
-        // aqui o blend já acabou — toca a animação de esconder e espera ela terminar
         yield return StartCoroutine(PlayAnimationAndWait(hideTrigger, hideStateName));
         isHidden = true;
 
-        // se quiser um retorno automático, poderia iniciar autoReturnCoroutine aqui
         if (interactDuration > 0f)
         {
             if (autoReturnCoroutine != null) StopCoroutine(autoReturnCoroutine);
@@ -226,46 +234,24 @@ public class InteractHideEnterExit : MonoBehaviour
     {
         yield return new WaitForSeconds(s);
 
-        // se estiver escondido, toca saída e depois restaura
         if (isHidden)
-        {
             yield return StartCoroutine(PlayAnimationAndWait(exitTrigger, exitStateName));
-        }
 
         ExitInteractModeImmediateRestore();
     }
 
-    // ---------- animações ----------
-    /// <summary>
-    /// Dispara um trigger (ou Play se trigger vazio) e espera até que o state indicado esteja ativo e completo.
-    /// </summary>
     IEnumerator PlayAnimationAndWait(string triggerName, string stateName)
     {
         if (doorAnimator == null)
-        {
-            Debug.LogWarning("[Interact] doorAnimator não atribuído — ignorando animação.");
             yield break;
-        }
 
-        // dispara a animação
         if (!string.IsNullOrEmpty(triggerName))
-        {
             doorAnimator.SetTrigger(triggerName);
-        }
         else if (!string.IsNullOrEmpty(stateName))
-        {
             doorAnimator.Play(stateName, 0, 0f);
-        }
-        else
-        {
-            Debug.LogWarning("[Interact] triggerName e stateName vazios — nada para tocar.");
-            yield break;
-        }
 
-        // espera o Animator trocar para o state desejado
-        // cuidado: pode demorar alguns frames até o Animator transitar
         bool stateReached = false;
-        for (int i = 0; i < 60; i++) // evita loop infinito (fallback depois de ~1s)
+        for (int i = 0; i < 60; i++)
         {
             var info = doorAnimator.GetCurrentAnimatorStateInfo(0);
             if (info.IsName(stateName))
@@ -277,66 +263,24 @@ public class InteractHideEnterExit : MonoBehaviour
         }
 
         if (!stateReached)
-        {
-            // fallback: pode não conseguir detectar pelo nome (ex: camadas, wrappers). Dá um pequeno delay e sai.
-            Debug.Log("[Interact] Não detectou state '" + stateName + "' — aguardando 0.2s como fallback.");
             yield return new WaitForSeconds(0.2f);
-            yield break;
-        }
 
-        // quando o state for alcançado, espera até normalizedTime >= 1 (fim do clip)
-        // se a animação estiver em loop, cuidado: esse método nunca completará. Assuma que suas animações NÃO estão em loop.
         while (true)
         {
             var info = doorAnimator.GetCurrentAnimatorStateInfo(0);
-            if (!info.IsName(stateName)) yield return null; // ainda mudando
-            else
-            {
-                // normalizedTime >= 1 significa que ao menos 1 ciclo completo já passou
-                if (info.normalizedTime >= 1f) break;
-                else yield return null;
-            }
+            if (!info.IsName(stateName)) yield return null;
+            else if (info.normalizedTime >= 1f) break;
+            else yield return null;
         }
     }
 
-    // ---------- utilidade: desativar CapsuleCollider do personagem ----------
-    /// <summary>
-    /// Desativa o CapsuleCollider do personagem (usa playerTransform se atribuído, ou procura por playerTag).
-    /// </summary>
+    // utilidade
     public void DisablePlayerCapsuleCollider()
     {
-        // tenta usar o cache se existir e ainda for válido
-        if (cachedPlayerCapsule == null)
-        {
-            Transform root = playerTransform;
-            if (root == null)
-            {
-                var playerGO = GameObject.FindGameObjectWithTag(playerTag);
-                if (playerGO != null) root = playerGO.transform;
-            }
-
-            if (root == null)
-            {
-                Debug.LogWarning("[Interact] Player não encontrado para desativar CapsuleCollider.");
-                return;
-            }
-
-            // procura primeiro no root, depois em filhos
-            cachedPlayerCapsule = root.GetComponent<CapsuleCollider>();
-            if (cachedPlayerCapsule == null)
-                cachedPlayerCapsule = root.GetComponentInChildren<CapsuleCollider>(true);
-        }
-
-        if (cachedPlayerCapsule == null)
-        {
-            Debug.LogWarning("[Interact] CapsuleCollider do player não encontrado.");
-            return;
-        }
-
-        cachedPlayerCapsule.enabled = false;
+        CapsuleCollider cachedPlayerCapsule = playerTransform?.GetComponent<CapsuleCollider>();
+        if (cachedPlayerCapsule != null) cachedPlayerCapsule.enabled = false;
     }
 
-    // métodos públicos (para disparar via outros scripts, botões etc.)
     public void ForceEnterInteract() => EnterInteractMode();
     public void ForceExitInteract() => StartCoroutine(ForceRestore());
 }
