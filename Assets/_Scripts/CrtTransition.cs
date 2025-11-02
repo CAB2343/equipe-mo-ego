@@ -1,44 +1,65 @@
 using UnityEngine;
 using System.Collections;
-using BrewedInk.CRT; // importante para acessar CRTCameraBehaviour
+using BrewedInk.CRT;
 
 public class CRTCurveTransition : MonoBehaviour
 {
     public CRTCameraBehaviour crtCam;
 
     /// <summary>
-    /// Faz uma transiÁ„o suave no monitorCurve.
+    /// Faz uma transi√ß√£o suave no monitorCurve.
     /// </summary>
-    public void StartCurveTransition(float novoValor, float duracao)
+    public void StartMonitorCurveTransition(float novoValor, float duracao)
     {
-        //StopAllCoroutines(); // cancela transiÁıes anteriores
-        StartCoroutine(CurveTransitionRoutine(novoValor, duracao));
+        StartCoroutine(FloatTransitionRoutine(
+            valorGetter: () => crtCam.data.monitorCurve,
+            valorSetter: v => {
+                crtCam.data.monitorCurve = v;
+                if (crtCam._runtimeMaterial != null)
+                    crtCam._runtimeMaterial.SetFloat(Shader.PropertyToID("_Curvature2"), v);
+            },
+            alvo: novoValor,
+            duracao: duracao
+        ));
     }
 
-    private IEnumerator CurveTransitionRoutine(float alvo, float duracao)
+    /// <summary>
+    /// Faz uma transi√ß√£o suave no PropDitheringAmount8 (dithering8).
+    /// </summary>
+    public void StartDitheringTransition(float novoValor, float duracao)
+    {
+        StartCoroutine(FloatTransitionRoutine(
+            valorGetter: () => crtCam.data.dithering8,
+            valorSetter: v => {
+                crtCam.data.dithering8 = v;
+                if (crtCam._runtimeMaterial != null)
+                    crtCam._runtimeMaterial.SetFloat(Shader.PropertyToID("_Spread8"), v);
+            },
+            alvo: novoValor,
+            duracao: duracao
+        ));
+    }
+
+    /// <summary>
+    /// Coroutine gen√©rica de transi√ß√£o de float.
+    /// </summary>
+    private IEnumerator FloatTransitionRoutine(System.Func<float> valorGetter, System.Action<float> valorSetter, float alvo, float duracao)
     {
         if (crtCam == null || crtCam.data == null)
             yield break;
 
-        float inicial = crtCam.data.monitorCurve;
+        float inicial = valorGetter();
         float tempo = 0f;
 
         while (tempo < duracao)
         {
             tempo += Time.deltaTime;
             float t = Mathf.Clamp01(tempo / duracao);
-
-            // interpolaÁ„o suave
-            crtCam.data.monitorCurve = Mathf.Lerp(inicial, alvo, t);
-
-            // opcional: aplica no material imediatamente
-            if (crtCam._runtimeMaterial != null)
-                crtCam._runtimeMaterial.SetFloat(Shader.PropertyToID("_Curvature2"), crtCam.data.monitorCurve);
-
+            valorSetter(Mathf.Lerp(inicial, alvo, t));
             yield return null;
         }
 
         // garante o valor final
-        crtCam.data.monitorCurve = alvo;
+        valorSetter(alvo);
     }
 }

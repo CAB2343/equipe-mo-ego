@@ -12,12 +12,13 @@ public class MenuManager : MonoBehaviour
     [SerializeField] private GameObject options;
     [SerializeField] private CRTCurveTransition camTransition;
     [SerializeField] private AudioSource sound;
+    [SerializeField] private GameObject canvas;
 
     void Start()
     {
     }
 
-    void update()
+    void Update()
     {
 
     }
@@ -25,7 +26,8 @@ public class MenuManager : MonoBehaviour
     public void Jogar()
     {
         sound.Stop();
-        camTransition.StartCurveTransition(0f, 3f);
+        camTransition.StartMonitorCurveTransition(0f, 3f);
+        camTransition.StartDitheringTransition(0f, 3f);
         StartCoroutine(CurveTransitionRoutine(3f));
     }
 
@@ -55,6 +57,6 @@ public class MenuManager : MonoBehaviour
             tempo += Time.deltaTime;
             yield return null;
         }
-        SceneManager.LoadScene("GAMEUOU");
+        canvas.SetActive(false);
     }
 }
