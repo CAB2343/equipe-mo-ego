@@ -13,6 +13,7 @@ public class MenuManager : MonoBehaviour
     [SerializeField] private CRTCurveTransition camTransition;
     [SerializeField] private AudioSource sound;
     [SerializeField] private GameObject canvas;
+    [SerializeField] private GameObject canvasGame;
 
     void Start()
     {
@@ -58,5 +59,6 @@ public class MenuManager : MonoBehaviour
             yield return null;
         }
         canvas.SetActive(false);
+        canvasGame.SetActive(true);
     }
 }
