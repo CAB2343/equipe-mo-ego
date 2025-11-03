@@ -37,11 +37,20 @@ public class MulaController : MonoBehaviour
 
     public bool veio = true;
     
+    void Awake()
+{
+    int layerMula = 8; // ou: LayerMask.NameToLayer("Mula")
+    int layerArvore = 7; // ou: LayerMask.NameToLayer("Arvore")
+
+    Physics.IgnoreLayerCollision(layerMula, layerArvore, true);
+}
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         rb.useGravity = true;
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+
 
         if (player == null)
         {
